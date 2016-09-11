@@ -165,6 +165,12 @@ nil means don't display tabs."
            (elscreen-tab-update t)))
   :group 'elscreen)
 
+(defcustom elscreen-ignore-list '(" *NeoTree*")
+  "A list of buffers where Elscreen tabs should not be shown.
+By default NeoTree is on this list."
+  :type  '(repeat string)
+  :group 'elscreen)
+
 (defface elscreen-tab-background-face
   '((((type x w32 mac) (class color))
      :background "Gray50")
@@ -1294,7 +1300,7 @@ Use \\[toggle-read-only] to permit editing."
 (let ((point (memq 'mode-line-position mode-line-format))
       (elscreen-mode-line-elm '(elscreen-display-screen-number
                                 (" " elscreen-mode-line-string))))
-  (when (null (member elscreen-mode-line-elm mode-line-format))
+  (when (and (null (member elscreen-mode-line-elm mode-line-format)) point)
     (setcdr point (cons elscreen-mode-line-elm (cdr point)))))
 
 (add-hook 'elscreen-screen-update-hook 'elscreen-mode-line-update)
@@ -1445,6 +1451,16 @@ Use \\[toggle-read-only] to permit editing."
         retval)
     string))
 
+(defun elscreen-get-buffer ()
+  "Return the buffer that should display the elscreen header."
+  (let* ((first (frame-first-window))
+         (first-buffer (window-buffer first))
+         (first-buffer-name (with-current-buffer first-buffer (buffer-name)))
+         (second-buffer (window-buffer (window-in-direction 'right first))))
+    (if (member first-buffer-name elscreen-ignore-list)
+         (or second-buffer first-buffer)
+       first-buffer)))
+
 (defun elscreen-tab-update (&optional force)
   (when (and (not (window-minibuffer-p))
              (or (elscreen-screen-modified-p 'elscreen-tab-update) force))
@@ -1454,7 +1470,7 @@ Use \\[toggle-read-only] to permit editing."
          (when (and (boundp 'elscreen-tab-format)
                     (equal header-line-format elscreen-tab-format)
                     (or (not (eq (window-buffer window)
-                                 (window-buffer (frame-first-window))))
+                                 (elscreen-get-buffer)))
                         (not elscreen-display-tab)))
            (kill-local-variable 'elscreen-tab-format)
            (setq header-line-format nil))))
@@ -1479,7 +1495,7 @@ Use \\[toggle-read-only] to permit editing."
                                       'mouse-2 'elscreen-create
                                       'mouse-3 'elscreen-next)
                           'help-echo "mouse-1: previous screen, mouse-2: create new screen, mouse-3: next screen")))
-        (with-current-buffer (window-buffer (frame-first-window))
+        (with-current-buffer (elscreen-get-buffer)
           (kill-local-variable 'elscreen-tab-format)
           (when elscreen-tab-display-control
             (setq elscreen-tab-format
