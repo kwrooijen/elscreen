@@ -165,6 +165,11 @@ nil means don't display tabs."
            (elscreen-tab-update t)))
   :group 'elscreen)
 
+(defcustom elscreen-tab-separation-width 0.5
+  "Separation between tabs. Defaults to 0.5."
+  :type 'float
+  :group 'elscreen)
+
 (defcustom elscreen-ignore-list '(" *NeoTree*")
   "A list of buffers where Elscreen tabs should not be shown.
 By default NeoTree is on this list."
@@ -1486,7 +1491,7 @@ Use \\[toggle-read-only] to permit editing."
             (tab-separator (propertize
                             " "
                             'face 'elscreen-tab-background-face
-                            'display '(space :width 0.5)))
+                            'display '(space :width elscreen-tab-separation-width)))
             (control-tab (propertize
                           "<->"
                           'face 'elscreen-tab-control-face
