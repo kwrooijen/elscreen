@@ -170,6 +170,11 @@ nil means don't display tabs."
   :type 'float
   :group 'elscreen)
 
+(defcustom elscreen-default-tab-format " %d%s%s%s "
+  "Format for Elscreen tabs."
+  :type 'string
+  :group 'elscreen)
+
 (defcustom elscreen-ignore-list '(" *NeoTree*")
   "A list of buffers where Elscreen tabs should not be shown.
 By default NeoTree is on this list."
@@ -1534,7 +1539,7 @@ Use \\[toggle-read-only] to permit editing."
                            kill-screen)
                          half-space
                          (propertize
-                          (format "%d%s%s%s"
+                          (format elscreen-default-tab-format
                                   screen
                                   (elscreen-status-label screen)
                                   half-space
