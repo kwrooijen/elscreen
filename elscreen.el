@@ -170,6 +170,11 @@ nil means don't display tabs."
   :type 'float
   :group 'elscreen)
 
+(defcustom elscreen-tab-height 25
+  ""
+  :type 'integer
+  :group 'elscreen)
+
 (defcustom elscreen-default-tab-format " %d%s%s%s "
   "Format for Elscreen tabs."
   :type 'string
@@ -1471,6 +1476,8 @@ Use \\[toggle-read-only] to permit editing."
          (or second-buffer first-buffer)
        first-buffer)))
 
+(defvar elscreen-empty-header (powerline-render (list (powerline-wave-left nil nil elscreen-tab-height))))
+
 (defun elscreen-tab-update (&optional force)
   (when (and (not (window-minibuffer-p))
              (or (elscreen-screen-modified-p 'elscreen-tab-update) force))
@@ -1483,7 +1490,7 @@ Use \\[toggle-read-only] to permit editing."
                                  (elscreen-get-buffer)))
                         (not elscreen-display-tab)))
            (kill-local-variable 'elscreen-tab-format)
-           (setq header-line-format nil))))
+           (setq header-line-format elscreen-empty-header))))
      'other 'other)
 
     (when elscreen-display-tab
@@ -1517,59 +1524,29 @@ Use \\[toggle-read-only] to permit editing."
 
           (mapc
            (lambda (screen)
-             (let ((kill-screen
-                    (propertize
-                     "[X]"
-                     'local-map (elscreen-tab-create-keymap
-                                 'mouse-1 `(lambda (e)
-                                             (interactive "e")
-                                             (elscreen-kill ,screen))
-                                 'M-mouse-1 `(lambda (e)
-                                               (interactive "e")
-                                               (elscreen-kill-screen-and-buffers ,screen)))
-                     'help-echo (format "mouse-1: kill screen %d, M-mouse-1: kill screen %d and buffers on it" screen screen))))
                (setq elscreen-tab-format
-                     (nconc
-                      elscreen-tab-format
-                      (list
-                       (propertize
-                        (concat
-                         (when (or (eq elscreen-tab-display-kill-screen 'left)
-                                   (eq elscreen-tab-display-kill-screen t))
-                           kill-screen)
-                         half-space
-                         (propertize
-                          (format elscreen-default-tab-format
-                                  screen
-                                  (elscreen-status-label screen)
-                                  half-space
-                                  (elscreen-tab-escape-%
-                                   (elscreen-truncate-screen-name
-                                    (assoc-default screen screen-to-name-alist)
-                                    (elscreen-tab-width) t)))
-                          'help-echo (assoc-default screen screen-to-name-alist)
-                          'local-map (elscreen-tab-create-keymap
-                                      'mouse-1 `(lambda (e)
-                                                  (interactive "e")
-                                                  (elscreen-goto ,screen))))
-                         (when (eq elscreen-tab-display-kill-screen 'right)
-                           (concat half-space kill-screen)))
-                        'face (if (eq current-screen screen)
-                                  'elscreen-tab-current-screen-face
-                                'elscreen-tab-other-screen-face))
-                       tab-separator)))))
-           screen-list)
+                     (nconc elscreen-tab-format
+                         (list
+                          (powerline-wave-right nil (my-tab-face) elscreen-tab-height)
+                          (powerline-raw (my-tab-format screen) (my-tab-face))
+                          (powerline-wave-left (my-tab-face) nil elscreen-tab-height)
+                          (powerline-raw " ")
+                          )))) screen-list)
+          (setq header-line-format '(" %e" (:eval (powerline-render elscreen-tab-format)))))))))
 
-          (setq elscreen-tab-format
-                (nconc
-                 elscreen-tab-format
-                 (list
-                  (propertize
-                   (make-string (window-width) ?\ )
-                   'face 'elscreen-tab-background-face
-                   'local-map (elscreen-tab-create-keymap)))))
+(defun my-tab-face ()
+  (if (eq current-screen screen)
+      'elscreen-tab-current-screen-face
+    'elscreen-tab-other-screen-face))
 
-          (setq header-line-format elscreen-tab-format))))))
+(defun my-tab-format (screen)
+  "docstring"
+  (format " %s %s " screen
+  (elscreen-truncate-screen-name
+   (assoc-default screen screen-to-name-alist)
+   (elscreen-tab-width) t)))
+
+
 
 (add-hook 'elscreen-screen-update-hook 'elscreen-tab-update)
 
